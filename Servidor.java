@@ -3,41 +3,18 @@ import java.net.*;
 import java.util.concurrent.*;
 
 public class Servidor {
+    private static final int PORTA = 12345;
 
-    private ServerSocket serverSocket;
-    private ExecutorService pool; // Pool de threads para lidar com múltiplos clientes
+    public static void main(String[] args) throws IOException {
+        ExecutorService pool = Executors.newFixedThreadPool(10);
+        try (ServerSocket serverSocket = new ServerSocket(PORTA)) {
+            System.out.println("Servidor iniciado na porta " + PORTA);
 
-    public Servidor(int port, int poolSize) {
-        try {
-            serverSocket = new ServerSocket(port);
-            pool = Executors.newFixedThreadPool(poolSize);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void start() {
-        System.out.println("Servidor iniciado na porta " + serverSocket.getLocalPort());
-        try {
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
                 pool.execute(new ClientHandler(clientSocket));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            stop();
         }
-    }
-
-    public void stop() {
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        pool.shutdown();
     }
 
     private static class ClientHandler implements Runnable {
@@ -47,15 +24,13 @@ public class Servidor {
             this.clientSocket = socket;
         }
 
+        @Override
         public void run() {
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
+            try (ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+                 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream())) {
 
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    System.out.println("Mensagem recebida do cliente: " + inputLine);
-                    out.println("Echo: " + inputLine);
-                }
+                // Implemente a lógica de CRUD aqui, processando as solicitações dos clientes
+
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -66,10 +41,5 @@ public class Servidor {
                 }
             }
         }
-    }
-
-    public static void main(String[] args) {
-        Servidor servidor = new Servidor(12345, 10);
-        servidor.start();
     }
 }
