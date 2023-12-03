@@ -1,0 +1,4 @@
+client\config.txt
+server\config.txt
+/server/target/
+/client/target/
